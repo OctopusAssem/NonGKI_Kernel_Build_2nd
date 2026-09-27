@@ -1,5 +1,5 @@
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index 547249acd..0412f2f6a 100644
+index 547249acd..f557b8467 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -19,6 +19,9 @@
@@ -12,7 +12,7 @@ index 547249acd..0412f2f6a 100644
  
  #include <asm/elf.h>
  #include <asm/tlb.h>
-@@ -347,6 +350,14 @@ static void show_vma_header_prefix(struct seq_file *m,
+@@ -347,6 +350,13 @@ static void show_vma_header_prefix(struct seq_file *m,
  		   MAJOR(dev), MINOR(dev), ino);
  }
  
@@ -23,11 +23,10 @@ index 547249acd..0412f2f6a 100644
 +extern struct srcu_struct susfs_srcu_open_redirect;
 +extern int susfs_open_redirect_spoof_show_map_vma_srcu(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char **out_spoofed_name);
 +#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-
  static void
  show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
  {
-@@ -879,6 +890,11 @@ static int show_smap(struct seq_file *m, void *v)
+@@ -879,6 +889,10 @@ static int show_smap(struct seq_file *m, void *v)
  	struct vm_area_struct *vma = v;
  	struct mem_size_stats mss;
  
@@ -35,7 +34,6 @@ index 547249acd..0412f2f6a 100644
 +	if (vma->vm_file && SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))
 +		return 0;
 +#endif
-
  	memset(&mss, 0, sizeof(mss));
  
  	smap_gather_stats(vma, &mss);
@@ -65,17 +63,16 @@ index 90831fb68..4711b3dc6 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/mm/memory.c b/mm/memory.c
-index 10dcc7f14..3f0a65570 100644
+index 10dcc7f14..6f7dfb9bd 100644
 --- a/mm/memory.c
 +++ b/mm/memory.c
-@@ -81,6 +81,10 @@
+@@ -81,6 +81,9 @@
  #include <asm/tlbflush.h>
  #include <asm/pgtable.h>
  
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
 +#include <linux/susfs_def.h>
 +#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
-
  #include "internal.h"
  
  #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
