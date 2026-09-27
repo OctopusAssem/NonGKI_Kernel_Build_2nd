@@ -76,3 +76,79 @@ index 10dcc7f14..6f7dfb9bd 100644
  #include "internal.h"
  
  #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
+diff --git a/fs/proc/version.c b/fs/proc/version.c
+index 94901e8e7..67d37e8ba 100644
+--- a/fs/proc/version.c
++++ b/fs/proc/version.c
+@@ -5,13 +5,32 @@
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
+ #include <linux/utsname.h>
++#include <linux/string.h>
++#include <linux/jump_label.h>
++
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++extern struct static_key_false susfs_is_uname_spoof_buffer_set;
++extern void susfs_spoof_uname(struct new_utsname* tmp);
++#endif
+ 
+ static int version_proc_show(struct seq_file *m, void *v)
+ {
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++	struct new_utsname tmp;
++
++	memcpy(&tmp, utsname(), sizeof(tmp));
++	if (static_branch_likely(&susfs_is_uname_spoof_buffer_set))
++		susfs_spoof_uname(&tmp);
++	seq_printf(m, linux_proc_banner,
++		tmp.sysname,
++		tmp.release,
++		tmp.version);
++#else
+ 	seq_printf(m, linux_proc_banner,
+ 		utsname()->sysname,
+ 		utsname()->release,
+ 		utsname()->version);
++#endif
+ 	return 0;
+ }
+ 
+diff --git a/kernel/utsname_sysctl.c b/kernel/utsname_sysctl.c
+index 258033d62..f5807b679 100644
+--- a/kernel/utsname_sysctl.c
++++ b/kernel/utsname_sysctl.c
+@@ -15,6 +15,13 @@
+ #include <linux/sysctl.h>
+ #include <linux/wait.h>
+ #include <linux/rwsem.h>
++#include <linux/string.h>
++#include <linux/jump_label.h>
++
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++extern struct static_key_false susfs_is_uname_spoof_buffer_set;
++extern void susfs_spoof_uname(struct new_utsname* tmp);
++#endif
+ 
+ #ifdef CONFIG_PROC_SYSCTL
+ 
+@@ -52,6 +59,20 @@ static int proc_do_uts_string(struct ctl_table *table, int write,
+ 	down_read(&uts_sem);
+ 	memcpy(tmp_data, get_uts(table), sizeof(tmp_data));
+ 	up_read(&uts_sem);
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++	if (!write && static_branch_likely(&susfs_is_uname_spoof_buffer_set)) {
++		struct new_utsname uts_tmp;
++
++		memcpy(&uts_tmp, utsname(), sizeof(uts_tmp));
++		susfs_spoof_uname(&uts_tmp);
++		if (!strcmp(table->procname, "ostype"))
++			memcpy(tmp_data, uts_tmp.sysname, sizeof(uts_tmp.sysname));
++		else if (!strcmp(table->procname, "osrelease"))
++			memcpy(tmp_data, uts_tmp.release, sizeof(uts_tmp.release));
++		else if (!strcmp(table->procname, "version"))
++			memcpy(tmp_data, uts_tmp.version, sizeof(uts_tmp.version));
++	}
++#endif
+ 	r = proc_dostring(&uts_table, write, buffer, lenp, ppos);
+ 
+ 	if (write) {
