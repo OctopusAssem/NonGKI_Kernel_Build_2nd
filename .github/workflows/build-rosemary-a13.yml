@@ -98,7 +98,12 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
            echo "[+] Applying rosemary SUSFS fixed patch"
-           patch -p1 < $GITHUB_WORKSPACE/rosemary_susfs_fixed.patch || true
+           patch -p1 --fuzz=0 < $GITHUB_WORKSPACE/rosemary_susfs_fixed.patch
+           echo "[+] Verifying version-spoof patch"
+           grep -q "susfs_is_uname_spoof_buffer_set" fs/proc/version.c
+           grep -q "susfs_spoof_uname" kernel/utsname_sysctl.c
+           grep -q "susfs_spoof_uname" kernel/sys.c
+           echo "[+] Version-spoof patch verified OK"
            echo "[+] Fix ksu_handle_stat flag -> flags"
            sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
 
