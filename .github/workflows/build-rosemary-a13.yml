@@ -99,6 +99,8 @@ jobs:
           cd $GITHUB_WORKSPACE/device_kernel
            echo "[+] Applying rosemary SUSFS fixed patch"
            patch -p1 < $GITHUB_WORKSPACE/rosemary_susfs_fixed.patch || true
+           echo "[+] Fix ksu_handle_stat flag -> flags"
+           sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
 
       - name: Patch Kernel of Re:Kernel
         uses: ./.github/workflows/patch-rekernel
