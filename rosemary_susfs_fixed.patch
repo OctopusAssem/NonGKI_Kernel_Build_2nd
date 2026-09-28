@@ -152,3 +152,18 @@ index 258033d62..f5807b679 100644
  	r = proc_dostring(&uts_table, write, buffer, lenp, ppos);
  
  	if (write) {
+diff --git a/init/version.c b/init/version.c
+index 5606341e9..7ea6b388e 100644
+--- a/init/version.c
++++ b/init/version.c
+@@ -27,8 +27,8 @@ struct uts_namespace init_uts_ns = {
+ 	.name = {
+ 		.sysname	= UTS_SYSNAME,
+ 		.nodename	= UTS_NODENAME,
+-		.release	= UTS_RELEASE,
+-		.version	= UTS_VERSION,
++		.release	= "4.14.186-perf-g079d9bd73b14",
++		.version	= "#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024",
+ 		.machine	= UTS_MACHINE,
+ 		.domainname	= UTS_DOMAINNAME,
+ 	},
