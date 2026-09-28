@@ -1,3 +1,19 @@
+diff --git a/fs/f2fs/Kconfig b/fs/f2fs/Kconfig
+index b00518f8c..f52a3fb2f 100644
+--- a/fs/f2fs/Kconfig
++++ b/fs/f2fs/Kconfig
+@@ -155,9 +155,9 @@ config F2FS_REPORT_FAKE_KERNEL_VERSION
+ config F2FS_FAKE_KERNEL_RELEASE
+ 	string "Kernel release for fsck.f2fs"
+ 	depends on F2FS_REPORT_FAKE_KERNEL_VERSION
+-	default "4.14.186-perf"
++	default "4.14.186-perf-g079d9bd73b14"
+ 
+ config F2FS_FAKE_KERNEL_VERSION
+ 	string "Kernel version for fsck.f2fs"
+ 	depends on F2FS_REPORT_FAKE_KERNEL_VERSION
+-	default "#1 SMP PREEMPT Tue Jul 13 00:53:27 CST 2021"
++	default "#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024"
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
 index 547249acd..f557b8467 100644
 --- a/fs/proc/task_mmu.c
@@ -37,45 +53,6 @@ index 547249acd..f557b8467 100644
  	memset(&mss, 0, sizeof(mss));
  
  	smap_gather_stats(vma, &mss);
-diff --git a/kernel/sys.c b/kernel/sys.c
-index 90831fb68..4711b3dc6 100644
---- a/kernel/sys.c
-+++ b/kernel/sys.c
-@@ -1207,12 +1207,20 @@ static int override_version(struct new_utsname __user *name)
- #endif
- }
- 
-+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
-+extern struct static_key_false susfs_is_uname_spoof_buffer_set;
-+extern void susfs_spoof_uname(struct new_utsname* tmp);
-+#endif
- SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
- {
- 	struct new_utsname tmp;
- 
- 	down_read(&uts_sem);
- 	memcpy(&tmp, utsname(), sizeof(tmp));
-+#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
-+	if (static_branch_likely(&susfs_is_uname_spoof_buffer_set))
-+		susfs_spoof_uname(&tmp);
-+#endif
- 	up_read(&uts_sem);
- 	if (copy_to_user(name, &tmp, sizeof(tmp)))
- 		return -EFAULT;
-diff --git a/mm/memory.c b/mm/memory.c
-index 10dcc7f14..6f7dfb9bd 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -81,6 +81,9 @@
- #include <asm/tlbflush.h>
- #include <asm/pgtable.h>
- 
-+#ifdef CONFIG_KSU_SUSFS_SUS_MAP
-+#include <linux/susfs_def.h>
-+#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
- #include "internal.h"
- 
- #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
 diff --git a/fs/proc/version.c b/fs/proc/version.c
 index 94901e8e7..67d37e8ba 100644
 --- a/fs/proc/version.c
@@ -113,6 +90,64 @@ index 94901e8e7..67d37e8ba 100644
  	return 0;
  }
  
+diff --git a/init/version.c b/init/version.c
+index 5606341e9..7ea6b388e 100644
+--- a/init/version.c
++++ b/init/version.c
+@@ -27,8 +27,8 @@ struct uts_namespace init_uts_ns = {
+ 	.name = {
+ 		.sysname	= UTS_SYSNAME,
+ 		.nodename	= UTS_NODENAME,
+-		.release	= UTS_RELEASE,
+-		.version	= UTS_VERSION,
++		.release	= "4.14.186-perf-g079d9bd73b14",
++		.version	= "#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024",
+ 		.machine	= UTS_MACHINE,
+ 		.domainname	= UTS_DOMAINNAME,
+ 	},
+diff --git a/kernel/sys.c b/kernel/sys.c
+index 90831fb68..4025eab79 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -1193,13 +1193,13 @@ static int override_version(struct new_utsname __user *name)
+ 	if (strcmp(current->comm, "fsck.f2fs"))
+ 		return 0;
+ 
+-	ret = copy_to_user(name->release, CONFIG_F2FS_FAKE_KERNEL_RELEASE,
+-			   strlen(CONFIG_F2FS_FAKE_KERNEL_RELEASE) + 1);
++	ret = copy_to_user(name->release, "4.14.186-perf-g079d9bd73b14",
++			   strlen("4.14.186-perf-g079d9bd73b14") + 1);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = copy_to_user(name->version, CONFIG_F2FS_FAKE_KERNEL_VERSION,
+-			   strlen(CONFIG_F2FS_FAKE_KERNEL_VERSION) + 1);
++	ret = copy_to_user(name->version, "#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024",
++			   strlen("#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024") + 1);
+ 
+ 	return ret;
+ #else
+@@ -1207,12 +1207,20 @@ static int override_version(struct new_utsname __user *name)
+ #endif
+ }
+ 
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++extern struct static_key_false susfs_is_uname_spoof_buffer_set;
++extern void susfs_spoof_uname(struct new_utsname* tmp);
++#endif
+ SYSCALL_DEFINE1(newuname, struct new_utsname __user *, name)
+ {
+ 	struct new_utsname tmp;
+ 
+ 	down_read(&uts_sem);
+ 	memcpy(&tmp, utsname(), sizeof(tmp));
++#ifdef CONFIG_KSU_SUSFS_SPOOF_UNAME
++	if (static_branch_likely(&susfs_is_uname_spoof_buffer_set))
++		susfs_spoof_uname(&tmp);
++#endif
+ 	up_read(&uts_sem);
+ 	if (copy_to_user(name, &tmp, sizeof(tmp)))
+ 		return -EFAULT;
 diff --git a/kernel/utsname_sysctl.c b/kernel/utsname_sysctl.c
 index 258033d62..f5807b679 100644
 --- a/kernel/utsname_sysctl.c
@@ -152,18 +187,17 @@ index 258033d62..f5807b679 100644
  	r = proc_dostring(&uts_table, write, buffer, lenp, ppos);
  
  	if (write) {
-diff --git a/init/version.c b/init/version.c
-index 5606341e9..7ea6b388e 100644
---- a/init/version.c
-+++ b/init/version.c
-@@ -27,8 +27,8 @@ struct uts_namespace init_uts_ns = {
- 	.name = {
- 		.sysname	= UTS_SYSNAME,
- 		.nodename	= UTS_NODENAME,
--		.release	= UTS_RELEASE,
--		.version	= UTS_VERSION,
-+		.release	= "4.14.186-perf-g079d9bd73b14",
-+		.version	= "#1 SMP PREEMPT Sun Apr 14 03:38:02 UTC 2024",
- 		.machine	= UTS_MACHINE,
- 		.domainname	= UTS_DOMAINNAME,
- 	},
+diff --git a/mm/memory.c b/mm/memory.c
+index 10dcc7f14..6f7dfb9bd 100644
+--- a/mm/memory.c
++++ b/mm/memory.c
+@@ -81,6 +81,9 @@
+ #include <asm/tlbflush.h>
+ #include <asm/pgtable.h>
+ 
++#ifdef CONFIG_KSU_SUSFS_SUS_MAP
++#include <linux/susfs_def.h>
++#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP
+ #include "internal.h"
+ 
+ #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
