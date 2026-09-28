@@ -104,6 +104,8 @@ jobs:
            grep -q "susfs_spoof_uname" kernel/utsname_sysctl.c
            grep -q "susfs_spoof_uname" kernel/sys.c
            echo "[+] Version-spoof patch verified OK"
+           grep -q "4.14.186-perf-g079d9bd73b14" init/version.c
+           echo "[+] Hardcoded kernel version verified OK"
            echo "[+] Fix ksu_handle_stat flag -> flags"
            sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
 
