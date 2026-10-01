@@ -110,6 +110,11 @@ jobs:
            grep -q "Sun Apr 14 03:38:02 UTC 2024" fs/f2fs/Kconfig
            grep -q "Sun Apr 14 03:38:02 UTC 2024" kernel/sys.c
            echo "[+] Hardcoded kernel version + f2fs fake-version verified OK"
+           echo "[+] Verifying Hide-Bootloader-Unlocked patch"
+           grep -q "build_hidden_cmdline" fs/proc/cmdline.c
+           grep -q "androidboot.verifiedbootstate=" fs/proc/cmdline.c
+           grep -q "androidboot.flash.locked=" fs/proc/cmdline.c
+           echo "[+] Hide-Bootloader-Unlocked patch verified OK"
            echo "[+] Fix ksu_handle_stat flag -> flags"
            sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
 

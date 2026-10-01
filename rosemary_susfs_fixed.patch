@@ -201,3 +201,117 @@ index 10dcc7f14..6f7dfb9bd 100644
  #include "internal.h"
  
  #ifdef CONFIG_SPECULATIVE_PAGE_FAULT
+
+diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
+--- a/fs/proc/cmdline.c
++++ b/fs/proc/cmdline.c
+@@ -3,12 +3,92 @@
+ #include <linux/init.h>
+ #include <linux/proc_fs.h>
+ #include <linux/seq_file.h>
++#include <linux/string.h>
++#include <linux/kernel.h>
+ 
+ #ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+ extern struct static_key_false susfs_is_fake_cmdline_or_bootconfig_buffer_set;
+ extern void susfs_spoof_cmdline_or_bootconfig(struct seq_file *m);
+ #endif
+ 
++/*
++ * Hide the unlocked-bootloader state from userspace.
++ *
++ * Android init parses this file very early and exports every androidboot.* key
++ * as the read-only ro.boot.* property, which is how the bootloader advertises
++ * its lock state. Rewriting those keys here makes userspace see a locked device
++ * with a green (verified) boot chain. The values are hardcoded in the kernel so
++ * no runtime configuration is needed and the real state cannot leak.
++ */
++#define HIDDEN_CMDLINE_SIZE 4096
++
++static char hidden_cmdline[HIDDEN_CMDLINE_SIZE];
++
++static const char * const cmdline_spoof_keys[] = {
++	"androidboot.verifiedbootstate=",
++	"androidboot.flash.locked=",
++	"androidboot.vbmeta.device_state=",
++	"androidboot.veritymode=",
++	"androidboot.warranty_bit=",
++};
++
++static const char * const cmdline_spoof_values[] = {
++	"green",
++	"1",
++	"locked",
++	"enforcing",
++	"0",
++};
++
++static void build_hidden_cmdline(void)
++{
++	const char *p = saved_command_line;
++	size_t out = 0;
++	int i;
++
++	if (!p)
++		return;
++
++	while (*p && out + 1 < sizeof(hidden_cmdline)) {
++		const char *end = strchr(p, ' ');
++		size_t len = end ? (size_t)(end - p) : strlen(p);
++		bool replaced = false;
++
++		for (i = 0; i < ARRAY_SIZE(cmdline_spoof_keys); i++) {
++			size_t klen = strlen(cmdline_spoof_keys[i]);
++
++			if (len > klen && !strncmp(p, cmdline_spoof_keys[i], klen)) {
++				size_t vlen = strlen(cmdline_spoof_values[i]);
++
++				if (out + vlen + 1 < sizeof(hidden_cmdline)) {
++					memcpy(hidden_cmdline + out, cmdline_spoof_values[i], vlen);
++					out += vlen;
++					replaced = true;
++				}
++				break;
++			}
++		}
++
++		if (!replaced) {
++			if (out + len + 1 >= sizeof(hidden_cmdline))
++				len = sizeof(hidden_cmdline) - out - 1;
++			memcpy(hidden_cmdline + out, p, len);
++			out += len;
++		}
++
++		if (out + 1 < sizeof(hidden_cmdline))
++			hidden_cmdline[out++] = ' ';
++
++		if (!end)
++			break;
++		p = end + 1;
++	}
++
++	if (out)
++		out--;
++	hidden_cmdline[out] = '\0';
++}
++
+ static int cmdline_proc_show(struct seq_file *m, void *v)
+ {
+ #ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
+@@ -18,7 +98,7 @@
+ 		return 0;
+ 	}
+ #endif
+-	seq_printf(m, "%s\n", saved_command_line);
++	seq_printf(m, "%s\n", hidden_cmdline);
+ 	return 0;
+ }
+ 
+@@ -36,6 +116,7 @@
+ 
+ static int __init proc_cmdline_init(void)
+ {
++	build_hidden_cmdline();
+ 	proc_create("cmdline", 0, NULL, &cmdline_proc_fops);
+ 	return 0;
+ }
