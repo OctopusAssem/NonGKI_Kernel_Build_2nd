@@ -205,7 +205,7 @@ index 10dcc7f14..6f7dfb9bd 100644
 diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 --- a/fs/proc/cmdline.c
 +++ b/fs/proc/cmdline.c
-@@ -3,12 +3,92 @@
+@@ -3,12 +3,99 @@
  #include <linux/init.h>
  #include <linux/proc_fs.h>
  #include <linux/seq_file.h>
@@ -230,11 +230,17 @@ diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 +
 +static char hidden_cmdline[HIDDEN_CMDLINE_SIZE];
 +
++/*
++ * Only spoof the properties that userspace/attestation actually read.
++ * androidboot.veritymode is deliberately NOT touched: it drives fs_mgr's
++ * dm-verity setup, and forcing it to "enforcing" on a device whose vbmeta has
++ * verification disabled makes the first stage fail and the device drop back to
++ * fastboot. Leaving the real value keeps the boot path intact.
++ */
 +static const char * const cmdline_spoof_keys[] = {
 +	"androidboot.verifiedbootstate=",
 +	"androidboot.flash.locked=",
 +	"androidboot.vbmeta.device_state=",
-+	"androidboot.veritymode=",
 +	"androidboot.warranty_bit=",
 +};
 +
@@ -242,7 +248,6 @@ diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 +	"green",
 +	"1",
 +	"locked",
-+	"enforcing",
 +	"0",
 +};
 +
@@ -266,7 +271,9 @@ diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
 +			if (len > klen && !strncmp(p, cmdline_spoof_keys[i], klen)) {
 +				size_t vlen = strlen(cmdline_spoof_values[i]);
 +
-+				if (out + vlen + 1 < sizeof(hidden_cmdline)) {
++				if (out + klen + vlen + 1 < sizeof(hidden_cmdline)) {
++					memcpy(hidden_cmdline + out, cmdline_spoof_keys[i], klen);
++					out += klen;
 +					memcpy(hidden_cmdline + out, cmdline_spoof_values[i], vlen);
 +					out += vlen;
 +					replaced = true;
@@ -298,7 +305,7 @@ diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
  static int cmdline_proc_show(struct seq_file *m, void *v)
  {
  #ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
-@@ -18,7 +98,7 @@
+@@ -18,7 +105,7 @@
  		return 0;
  	}
  #endif
@@ -307,7 +314,7 @@ diff --git a/fs/proc/cmdline.c b/fs/proc/cmdline.c
  	return 0;
  }
  
-@@ -36,6 +116,7 @@
+@@ -36,6 +123,7 @@
  
  static int __init proc_cmdline_init(void)
  {
