@@ -27,11 +27,11 @@ env:
   DEFCONFIG_ORIGIN_IMAGE: ""
   DEFCONFIG_FROM_BOOT: false
 
-  KERNELSU_SOURCE: "https://github.com/OctopusAssem/ReSukiSU"
-  KERNELSU_BRANCH: "main"
-  KERNELSU_AUTO_GET: "false"
+  KERNELSU_SOURCE: ""
+  KERNELSU_BRANCH: ""
+  KERNELSU_AUTO_GET: "true"
   KERNELSU_AUTO_FORK: "resukisu"
-  KERNELSU_METHOD: "manual"
+  KERNELSU_METHOD: "shell"
 
   SUSFS_ENABLE: "true"
   SUSFS_FIXED: "true"
