@@ -112,6 +112,10 @@ jobs:
            echo "[+] Hardcoded kernel version + f2fs fake-version verified OK"
            echo "[+] Fix ksu_handle_stat flag -> flags"
            sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
+           echo "[+] Keep the REAL seccomp filter on the manager (ReSukiSU disables it)"
+           sed -i 's/disable_seccomp();/if (!ksu_is_manager_uid(new_uid)) disable_seccomp();/' drivers/kernelsu/hook/setuid_hook.c
+           test "$(grep -c 'if (!ksu_is_manager_uid(new_uid)) disable_seccomp();' drivers/kernelsu/hook/setuid_hook.c)" = "2"
+           echo "[+] Real-seccomp manager patch verified OK (2 sites)"
 
       - name: Register spoofed manager signature (fix /data/adb/ksud read-only lock)
         shell: bash
