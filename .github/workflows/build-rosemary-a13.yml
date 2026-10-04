@@ -117,6 +117,10 @@ jobs:
            echo "[+] Hide-Bootloader-Unlocked patch verified OK"
            echo "[+] Fix ksu_handle_stat flag -> flags"
            sed -i 's/ksu_handle_stat(&dfd, &fname, &flag);/ksu_handle_stat(\&dfd, \&fname, \&flags);/' fs/stat.c
+           echo "[+] Patch PR_GET_SECCOMP to report Filter"
+           sed -i 's/return current->seccomp.mode;/return SECCOMP_MODE_FILTER;/' kernel/seccomp.c
+           grep -q "return SECCOMP_MODE_FILTER;" kernel/seccomp.c
+           echo "[+] PR_GET_SECCOMP spoof verified OK"
 
       - name: Register spoofed manager signature (fix /data/adb/ksud read-only lock)
         shell: bash
