@@ -43,7 +43,7 @@ env:
   NEED_SAFE_DTBO: false
   PACK_METHOD: "AnyKernel3"
   PACK_KMODULES: "false"
-  ROM_TEXT: "miui_a13"
+  ROM_TEXT: "miui_a13-v9c"
   PYTHON_VERSION: "3"
 
   PATCHES_SOURCE: "JackA1ltman/NonGKI_Kernel_Patches"
@@ -116,9 +116,13 @@ jobs:
            sed -i 's/disable_seccomp();/if (!ksu_is_manager_uid(new_uid)) disable_seccomp();/' drivers/kernelsu/hook/setuid_hook.c
            test "$(grep -c 'if (!ksu_is_manager_uid(new_uid)) disable_seccomp();' drivers/kernelsu/hook/setuid_hook.c)" = "2"
            echo "[+] Real-seccomp manager patch verified OK (2 sites)"
-           echo "[+] BakaSU needs KALLSYMS_ALL on 4.14 (static-export checks)"
-           grep -q "^CONFIG_KALLSYMS_ALL=" ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME} || echo "CONFIG_KALLSYMS_ALL=y" >> ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME}
+           echo "[+] v9: KALLSYMS_ALL intentionally NOT enabled (test)"
            grep -c "static void security_dump_masked_av" security/selinux/ss/services.c || true
+           echo "[+] v9b: export security_dump_masked_av instead of enabling KALLSYMS_ALL"
+           sed -i 's/^static void security_dump_masked_av(/void security_dump_masked_av(/' security/selinux/ss/services.c
+           grep -q "^void security_dump_masked_av(" security/selinux/ss/services.c && echo "[+] security_dump_masked_av is now global"
+           sed -i 's/^static void context_struct_compute_av(/void context_struct_compute_av(/' security/selinux/ss/services.c
+           grep -q "^void context_struct_compute_av(" security/selinux/ss/services.c && echo "[+] context_struct_compute_av is now global"
            grep -c "struct selinux_state " security/selinux/include/security.h || true
 
       - name: Register spoofed manager signature (fix /data/adb/ksud read-only lock)
