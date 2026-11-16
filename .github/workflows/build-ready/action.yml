@@ -167,13 +167,13 @@ runs:
                 fi
 
             elif [[ "${{ env.KERNELSU_AUTO_FORK }}" == "resukisu" ]]; then
-                KERNELSU_AUTHOR="ReSukiSU"
-                KERNELSU_NAME="ReSukiSU"
+                KERNELSU_AUTHOR="Baka-SU"
+                KERNELSU_NAME="BakaSU"
                 KERNELSU_ORIGIN_BRANCH="main"
                 if [[ "${{ env.SUSFS_ENABLE }}" == "true" ]]; then
-                    KERNELSU_BRANCH="fa8311f632a215b5381ec644627c6198d1e8a13e"
+                    KERNELSU_BRANCH="7b65bde0710b5e7c6f755545cb15a4abd417f3a8"
                 else
-                    KERNELSU_BRANCH="fa8311f632a215b5381ec644627c6198d1e8a13e"
+                    KERNELSU_BRANCH="7b65bde0710b5e7c6f755545cb15a4abd417f3a8"
                 fi
 
             else
