@@ -27,9 +27,9 @@ env:
   DEFCONFIG_ORIGIN_IMAGE: ""
   DEFCONFIG_FROM_BOOT: false
 
-  KERNELSU_SOURCE: ""
-  KERNELSU_BRANCH: ""
-  KERNELSU_AUTO_GET: "true"
+  KERNELSU_SOURCE: "https://github.com/Baka-SU/BakaSU"
+  KERNELSU_BRANCH: "v4.2.0-rc3"
+  KERNELSU_AUTO_GET: "false"
   KERNELSU_AUTO_FORK: "resukisu"
   KERNELSU_METHOD: "shell"
 
@@ -43,7 +43,7 @@ env:
   NEED_SAFE_DTBO: false
   PACK_METHOD: "AnyKernel3"
   PACK_KMODULES: "false"
-  ROM_TEXT: "miui_a13"
+  ROM_TEXT: "miui_a13-v9tag"
   PYTHON_VERSION: "3"
 
   PATCHES_SOURCE: "JackA1ltman/NonGKI_Kernel_Patches"
@@ -116,8 +116,7 @@ jobs:
            sed -i 's/disable_seccomp();/if (!ksu_is_manager_uid(new_uid)) disable_seccomp();/' drivers/kernelsu/hook/setuid_hook.c
            test "$(grep -c 'if (!ksu_is_manager_uid(new_uid)) disable_seccomp();' drivers/kernelsu/hook/setuid_hook.c)" = "2"
            echo "[+] Real-seccomp manager patch verified OK (2 sites)"
-           echo "[+] BakaSU needs KALLSYMS_ALL on 4.14 (static-export checks)"
-           grep -q "^CONFIG_KALLSYMS_ALL=" ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME} || echo "CONFIG_KALLSYMS_ALL=y" >> ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME}
+           echo "[+] v9: KALLSYMS_ALL intentionally NOT enabled (test)"
            grep -c "static void security_dump_masked_av" security/selinux/ss/services.c || true
            grep -c "struct selinux_state " security/selinux/include/security.h || true
 
