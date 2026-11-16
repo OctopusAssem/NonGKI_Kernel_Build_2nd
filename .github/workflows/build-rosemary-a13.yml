@@ -116,6 +116,10 @@ jobs:
            sed -i 's/disable_seccomp();/if (!ksu_is_manager_uid(new_uid)) disable_seccomp();/' drivers/kernelsu/hook/setuid_hook.c
            test "$(grep -c 'if (!ksu_is_manager_uid(new_uid)) disable_seccomp();' drivers/kernelsu/hook/setuid_hook.c)" = "2"
            echo "[+] Real-seccomp manager patch verified OK (2 sites)"
+           echo "[+] BakaSU needs KALLSYMS_ALL on 4.14 (static-export checks)"
+           grep -q "^CONFIG_KALLSYMS_ALL=" ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME} || echo "CONFIG_KALLSYMS_ALL=y" >> ./arch/${KERNEL_ARCH}/configs/${DEFCONFIG_NAME}
+           grep -c "static void security_dump_masked_av" security/selinux/ss/services.c || true
+           grep -c "struct selinux_state " security/selinux/include/security.h || true
 
       - name: Register spoofed manager signature (fix /data/adb/ksud read-only lock)
         shell: bash
