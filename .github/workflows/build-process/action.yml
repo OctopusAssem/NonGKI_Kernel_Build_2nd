@@ -33,6 +33,7 @@ runs:
       - name: Build Kernel
         shell: bash
         run: |
+          exec > >(tee -a "$GITHUB_WORKSPACE/build.log") 2>&1
           cd $GITHUB_WORKSPACE/device_kernel/
 
           # Function
